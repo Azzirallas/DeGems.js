@@ -1,0 +1,560 @@
+async function connectAndDisplayNFTs() {
+    try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+
+        const userAddress = await signer.getAddress();
+        const balance = await contract.balanceOf(userAddress);
+        let nftData = [];
+
+        for (let i = 0; i < balance; i++) {
+            const tokenId = await contract.tokenOfOwnerByIndex(userAddress, i);
+            const tokenURI = await contract.tokenURI(tokenId);
+            const metadata = await fetchNFTMetadata(tokenURI);
+            nftData.push({
+                tokenId: tokenId.toString(), // Include tokenId
+                name: metadata.name,
+                image: metadata.image
+            });
+        }
+        displayNFTs(nftData);
+    } catch (error) {
+        console.error('Failed to connect and display NFTs:', error);
+        alert("Failed to load NFTs. See console for details.");
+    }
+}
+
+async function connectAndDisplayNFTsALT() {
+    try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+
+        const userAddress = await signer.getAddress();
+        const balance = await contract.balanceOf(userAddress);
+        let nftData = [];
+
+        for (let i = 0; i < balance; i++) {
+            const tokenId = await contract.tokenOfOwnerByIndex(userAddress, i);
+            const tokenURI = await contract.tokenURI(tokenId);
+            const metadata = await fetchNFTMetadata(tokenURI);
+            nftData.push({
+                tokenId: tokenId.toString(), // Include tokenId
+                name: metadata.name,
+                image: metadata.image
+            });
+        }
+        displayNFTsALT(nftData);
+    } catch (error) {
+        console.error('Failed to connect and display NFTs:', error);
+        alert("Failed to load NFTs. See console for details.");
+    }
+}
+
+function displayNFTs(nftData) {
+    const container = document.getElementById('nftDisplay');
+    container.innerHTML = ''; // Clear existing NFTs
+
+    nftData.forEach(nft => {
+        const nftElement = document.createElement('div');
+        nftElement.className = 'nft';
+        nftElement.innerHTML = `
+            <label style="position: relative; display: inline-block;">
+                <input type="checkbox" onclick="updateSelectedTokenIds(this, '${nft.tokenId}')" data-token-id="${nft.tokenId}" style="position: absolute; z-index: 2; opacity: 0.8; width: 20px; height: 20px; left: 10px; top: 10px;">
+                <img src="${nft.image}" alt="${nft.name}" style="width: 400px; height: auto;">
+            </label>
+            <!-- <h3>${nft.name}</h3> -->
+        `;
+        container.appendChild(nftElement);
+    });
+}
+
+function displayNFTsALT(nftData) {
+    const container = document.getElementById('nftDisplay');
+    container.innerHTML = ''; // Clear existing NFTs
+
+    nftData.forEach(nft => {
+        const nftElement = document.createElement('div');
+        nftElement.className = 'nft';
+        nftElement.innerHTML = `
+            <div style="position: relative; display: inline-block;">
+                <img src="${nft.image}" alt="${nft.name}" style="width: 400px; height: auto;">
+            </div>
+            <!-- <h3>${nft.name}</h3> -->
+        `;
+        container.appendChild(nftElement);
+    });
+}
+
+
+// This array will store the selected token IDs
+let selectedTokenIds = [];
+
+function updateSelectedTokenIds(checkbox, tokenId) {
+    const isChecked = checkbox.checked;
+    if (isChecked) {
+        selectedTokenIds.push(tokenId);
+    } else {
+        selectedTokenIds = selectedTokenIds.filter(id => id !== tokenId);
+    }
+    console.log(selectedTokenIds); // Debugging: Log out the current selection
+}
+
+async function fetchNFTMetadata(tokenURI) {
+    const response = await fetch(tokenURI);
+    const metadata = await response.json();
+    return {
+        image: metadata.image
+    };
+}
+
+
+async function revealNFTs() {
+    try {
+        // Request account access if necessary
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        // Connect to the contract with a signer for sending a transaction
+        const ContractReveal = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+
+        // Call the reveal function with the array of selected token IDs
+        const transactionResponse = await ContractReveal.RevealMyGems(selectedTokenIds);
+
+        console.log('Reveal transaction sent:', transactionResponse);
+
+        // Wait for the transaction to be mined
+        await transactionResponse.wait();
+        console.log('NFTs successfully revealed');
+
+    } catch (error) {
+        console.error('Failed to reveal NFTs:', error);
+        alert(`Reveal is not currently open`);
+    }
+}
+
+async function MeltNFTs() {
+    try {
+        // Request account access if necessary
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        // Connect to the contract with a signer for sending a transaction
+        const ContractMelt = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+
+        // Call the reveal function with the array of selected token IDs
+        const transactionResponse = await ContractMelt.MeltGems(selectedTokenIds);
+
+        console.log('Melt transaction sent:', transactionResponse);
+
+        // Wait for the transaction to be mined
+        await transactionResponse.wait();
+        console.log('NFTs successfully Melted');
+
+    } catch (error) {
+        console.error('Failed to Melt NFTs:', error);
+        alert(`You cannot Melt DeGems while Mint is still live`);
+    }
+}
+
+async function loadPayout() {
+    try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const contract = new ethers.Contract(DeGemsContract, DeGemsABI, provider);
+
+        // Call the checkPayout function
+        const payout = await contract.checkPayout();
+
+        // Assuming payout returns a BigNumber and you only want the first value
+        const firstValue = Array.isArray(payout) ? payout[0] : payout;
+        
+        // Convert the first value from wei to ether
+        const displayValueInEther = ethers.utils.formatEther(firstValue);
+
+        // Convert to a number and format to 2 decimal places
+        const formattedValue = parseFloat(displayValueInEther).toFixed(2);
+
+        // Update the web page with the fetched data
+        document.getElementById('payoutDisplay').textContent = `Gem Value: ${formattedValue} AVAX`;
+    } catch (error) {
+        console.error('Error fetching payout:', error);
+        document.getElementById('payoutDisplay').textContent = 'Payout: Error fetching data. See console for details.';
+    }
+}
+
+
+async function loadUserPayout() {
+    try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []); // Request access to user's accounts
+        const signer = provider.getSigner();
+        const userAddress = await signer.getAddress(); // Get the user's address
+
+        const contract = new ethers.Contract(DeGemsContract, DeGemsABI, signer); // Use signer for read operations as well
+
+        // Call the getUserPayout function with the user's address
+        const payout = await contract.checkUserPayout(userAddress);
+
+        // Convert the payout from wei to ether, and format it to 2 decimal places
+        const displayValueInEther = ethers.utils.formatEther(payout);
+        const formattedValue = parseFloat(displayValueInEther).toFixed(2);
+
+        // Update the web page with the fetched data
+        document.getElementById('userPayoutDisplay').textContent = `Claimable: ${formattedValue} AVAX`;
+    } catch (error) {
+        console.error('Error fetching user payout:', error);
+        document.getElementById('userPayoutDisplay').textContent = 'User Payout: Error';
+    }
+}
+
+
+async function UserClaim() {
+    try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+
+        // Assuming retrieveData() for a view function or performAction() for a state-changing function
+        const tx = await contract.ClaimPayout(); // Or contract.performAction() for state changes
+
+        // If it's a transaction that changes state, wait for it to be mined
+        if(tx.wait) await tx.wait();
+
+        console.log('Contract function called successfully');
+        // Additional logic to handle the response goes here
+    } catch (error) {
+        console.error('Error calling contract function:', error);
+    }
+}
+
+async function ShatterNFTs() {
+    try {
+        // Request account access if necessary
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        // Connect to the contract with a signer for sending a transaction
+        const ContractMelt = new ethers.Contract(Qi20Contract, Qi20ABI, signer);
+
+        // Call the reveal function with the array of selected token IDs
+        const transactionResponse = await ContractMelt.ShatterGems(selectedTokenIds);
+
+        console.log('Melt transaction sent:', transactionResponse);
+
+        // Wait for the transaction to be mined
+        await transactionResponse.wait();
+        console.log('NFTs successfully Melted');
+
+    } catch (error) {
+        console.error('Failed to Melt NFTs:', error);
+        alert(`Failed to reveal NFTs: ${error.message}`);
+    }
+}
+
+
+async function setApprovalForAll() {
+    console.log('Attempting to set approval for all...');
+    if (!window.ethereum) {
+        alert('Ethereum wallet is not connected. Please install MetaMask or another wallet.');
+        return;
+    }
+
+    try {
+        console.log('Initializing provider...');
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+
+        console.log('Setting up contract...');
+        const nftContractAddress = DeGemsContract; // Directly use the contract address here
+        const operatorAddress = Qi20Contract; // Ensure this is correctly set
+
+        // Directly define the ABI part relevant to setApprovalForAll
+        const nftContractABI = ["function setApprovalForAll(address operator, bool approved) external"];
+		const NftContract = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+
+        console.log(`Calling setApprovalForAll on contract with operator address: ${operatorAddress}`);
+        const tx = await NftContract.setApprovalForAll(operatorAddress, true);
+        console.log('Approval transaction submitted. Transaction hash:', tx.hash);
+
+        await tx.wait();
+        alert('NFTs approved successfully.');
+    } catch (error) {
+        console.error('Error during NFT approval:', error);
+        alert('An error occurred during the approval process. See the console for more details.');
+    }
+}
+
+
+async function approveQi() {
+    console.log('Attempting to approve ERC20 token spending...');
+    if (!window.ethereum) {
+        alert('Ethereum wallet is not connected. Please install MetaMask or another wallet.');
+        return;
+    }
+
+    try {
+        console.log('Initializing provider...');
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+
+        console.log('Setting up ERC20 contract...');
+        const erc20ContractAddress = Qi20Contract; // Replace with your ERC-20 contract address
+        const spenderAddress = DeGemsContract; // The ERC-721 contract address that will spend the ERC-20 token
+        const amount = '10000000000000000000000000000000000000000000000'; // The amount of tokens to approve, in wei
+
+        // Directly define the ABI part relevant to the approve function
+        const erc20ContractABI = ["function approve(address spender, uint256 amount) external returns (bool)"];
+        const erc20Contract = new ethers.Contract(Qi20Contract, Qi20ABI, signer);
+
+        console.log(`Approving ${spenderAddress} to spend tokens...`);
+        const tx = await erc20Contract.approve(spenderAddress, amount);
+        console.log('Approval transaction submitted. Transaction hash:', tx.hash);
+
+        await tx.wait();
+        alert('Token spending approved successfully.');
+    } catch (error) {
+        console.error('Error during ERC20 token approval:', error);
+        alert('An error occurred during the approval process. See the console for more details.');
+    }
+}
+
+
+
+async function Forge() {
+    console.log('Attempting to call a non-read-only contract function...');
+    if (!window.ethereum) {
+        alert('Ethereum wallet is not connected. Please install MetaMask or another wallet.');
+        return;
+    }
+
+    try {
+        console.log('Initializing provider...');
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []); // Request account access
+        const signer = provider.getSigner(); // Get the signer to sign the transaction
+
+        console.log('Setting up contract...');
+        const contract = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+
+        console.log('Sending transaction to call the function...');
+        const tx = await contract.ForgeGem(); // Replace `yourFunctionName` with the actual function name
+        console.log('Transaction submitted. Waiting for confirmation...');
+        console.log('Transaction hash:', tx.hash);
+
+        await tx.wait(); // Wait for the transaction to be mined
+        alert('Function called successfully and transaction confirmed.');
+    } catch (error) {
+        console.error('Error during the contract function call:', error);
+        alert('An error occurred during the function call. See the console for more details.');
+    }
+}
+
+
+async function rerollNFTs() {
+    try {
+        // Request account access if necessary
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+
+        // Connect to the contract with a signer for sending a transaction
+        const ContractReveal = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+
+        // Call the reveal function with the array of selected token IDs
+        const transactionResponse = await ContractReveal.reRollGems(selectedTokenIds);
+
+        console.log('Reveal transaction sent:', transactionResponse);
+
+        // Wait for the transaction to be mined
+        await transactionResponse.wait();
+        console.log('NFTs successfully revealed');
+
+    } catch (error) {
+        console.error('Failed to reroll NFTs:', error);
+        alert(`You cannot reroll unrevealed NFTs or You do not have enough $Zen`);
+    }
+}
+
+    async function GatherQi(amount) {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const signer = provider.getSigner();
+                const contract = new ethers.Contract(Qi20Contract, Qi20ABI, signer);
+
+                // Assuming the function you want to call is named "makePayment"
+                // and it doesn't take any arguments apart from the value sent.
+                const tx = await contract.GatherZen({ value: ethers.utils.parseEther(amount) });
+                console.log('Transaction sent:', tx.hash);
+
+                // Wait for the transaction to be mined
+                await tx.wait();
+                console.log('Payment successful');
+            } catch (error) {
+                console.error('Payment failed:', error);
+            }
+        } else {
+            alert('Please install MetaMask!');
+        }
+    }
+
+async function ReleaseQi(tokenAmount) {
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(Qi20Contract, Qi20ABI, signer);
+
+            // Pass the token amount directly to the contract function
+            // This approach assumes the contract function expects the amount in a non-converted format
+            const tx = await contract.releaseZen(tokenAmount);
+            console.log('Transaction sent:', tx.hash);
+
+            // Wait for the transaction to be mined
+            await tx.wait();
+            console.log('Tokens released successfully');
+        } catch (error) {
+            console.error('Token release failed:', error);
+        }
+    } else {
+        alert('Please install MetaMask!');
+    }
+}
+
+    async function loadTotalSupply() {
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []); // Request account access if needed
+
+            const contract = new ethers.Contract(DeGemsContract, DeGemsABI, provider);
+
+            // Replace 'readOnlyFunctionName' with your contract's read-only function name
+            const data = await contract.totalSupply();
+
+            document.getElementById('TotalSupply').innerText = data.toString();
+        } catch (error) {
+            console.error("An error occurred:", error);
+        }
+    }
+
+async function loadTotalQi() {
+    try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []); // Request account access if needed
+
+        const signer = provider.getSigner();
+        const userAddress = await signer.getAddress();
+
+        const contract = new ethers.Contract(Qi20Contract, Qi20ABI, provider);
+
+        const data = await contract.balanceOf(userAddress);
+
+        const formattedBalance = ethers.utils.formatUnits(data, 'ether');
+
+        document.getElementById('TotalQi').innerText = `You have: ${parseInt(formattedBalance)} $Zen`;
+    } catch (error) {
+        console.error("An error occurred:", error);
+    }
+}
+
+
+
+async function mintNFTs() {
+    const quantityString = document.getElementById('mintAmount').value;
+    const quantity = parseInt(quantityString, 10);
+
+    if (isNaN(quantity) || quantity <= 0 || quantity > 3) {
+        alert("Please enter a valid quantity between 1 and 3.");
+        return;
+    }
+
+    if (typeof window.ethereum === "undefined") {
+        alert("Please install MetaMask to use this feature.");
+        return;
+    }
+
+    try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const address = await signer.getAddress();
+        
+        const contract = new ethers.Contract(DeGemsContract, DeGemsABI, signer);
+        
+
+        // Minting logic proceeds if time check passes
+        const costPerNFT = ethers.utils.parseEther("1"); // Adjust according to your mint price
+        const totalCost = costPerNFT.mul(quantity);
+        
+        console.log(`Attempting to mint ${quantity} NFT(s) with total cost: ${ethers.utils.formatEther(totalCost)} ETH`);
+
+        const transactionResponse = await contract.Mint(quantity, { value: totalCost });
+        console.log('Minting transaction sent:', transactionResponse);
+
+        await transactionResponse.wait();
+        console.log(`Successfully minted ${quantity} NFT(s)`);
+        document.getElementById('mintWaitMessage').innerHTML = "Mint successful!";
+    } catch (error) {
+        console.error('Minting failed:', error);
+        alert(`Minting is either not live or you have already max minted`);
+    }
+}
+
+
+
+
+async function claimTokens() {
+    try {
+        // Check if MetaMask is installed
+        if (!window.ethereum) {
+            alert("MetaMask is not installed!");
+            return;
+        }
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        await provider.send("eth_requestAccounts", []);
+        const contract = new ethers.Contract(Qi20Contract, Qi20ABI, signer);
+        const tx = await contract.claimMintedTokens();
+        await tx.wait();
+        alert("Tokens successfully claimed!");
+    } catch (error) {
+        console.error("Error claiming tokens:", error);
+        alert("Error claiming tokens. See console for details.");
+    }
+}
+
+
+async function getPendingMints() {
+    try {
+        // Check if MetaMask is installed
+        if (!window.ethereum) {
+            document.getElementById("pendingMintsDisplay").innerText = "MetaMask is not installed!";
+            return;
+        }
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const userAddress = await signer.getAddress();
+        const contract = new ethers.Contract(Qi20Contract, Qi20ABI, signer);
+        const pendingMints = await contract.getPendingMints(userAddress);
+        console.log("Pending mints for", userAddress, ":", pendingMints.toString());
+
+        const formattedMints = ethers.utils.formatUnits(pendingMints, 18);
+        const displayMints = parseFloat(formattedMints).toFixed(2);
+
+        document.getElementById("pendingMintsDisplay").innerText = `Claimable Zen: ${displayMints}`;
+    } catch (error) {
+        console.error("Error getting pending mints:", error);
+        document.getElementById("pendingMintsDisplay").innerText = "Error getting pending mints. See console for details.";
+    }
+}
