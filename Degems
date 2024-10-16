@@ -1,8 +1,6 @@
 const DeGemsContract = "0x557191f831C0936c2177fFac1d12814F598C487d"
 const Qi20Contract = "0xA39d438Ba932d4439F2921A65c213C502841E89B"
 
-const DeGemsABI = https://testnet.snowtrace.io/token/0x557191f831C0936c2177fFac1d12814F598C487d/contract/code?chainid=43113#abi
-const Qi20ABI = https://testnet.snowtrace.io/token/0xA39d438Ba932d4439F2921A65c213C502841E89B/contract/code?chainid=43113#abi
 const DeGemsABI = https://testnet.snowtrace.io/token/0x557191f831C0936c2177fFac1d12814F598C487d/contract/code?chainid=43113#abi;
 const Qi20ABI = https://testnet.snowtrace.io/token/0xA39d438Ba932d4439F2921A65c213C502841E89B/contract/code?chainid=43113#abi;
 
