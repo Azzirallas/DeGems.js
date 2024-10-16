@@ -1,8 +1,8 @@
 const DeGemsContract = "0xEB4148985dC28B255605917dfEb85F0991436818"
 const Qi20Contract = "0x11829F2fe63D2F0ABEB0b935DF361cF3A0494E03"
 
-const DeGemsABI = https://testnet.snowtrace.io/token/0x557191f831C0936c2177fFac1d12814F598C487d/contract/code?chainid=43113#abi;
-const Qi20ABI = https://testnet.snowtrace.io/token/0xA39d438Ba932d4439F2921A65c213C502841E89B/contract/code?chainid=43113#abi;
+const DeGemsABI = https://testnet.snowtrace.io/token/0x557191f831C0936c2177fFac1d12814F598C487d/contract/code?chainid=43113#abi
+const Qi20ABI = https://testnet.snowtrace.io/token/0xA39d438Ba932d4439F2921A65c213C502841E89B/contract/code?chainid=43113#abi
 
 
 async function connectAndDisplayNFTs() {
